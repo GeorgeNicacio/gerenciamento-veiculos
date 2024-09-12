@@ -39,7 +39,7 @@ Este projeto é uma aplicação de gerenciamento de estacionamento que permite r
 3. Compile e execute o projeto:
    ```bash
    ./mvnw spring-boot:run
-4. Acesse a aplicação em http://localhost:8080.
+4. Acesse a aplicação em http://localhost:8080/graphiql?path=/graphql
 
 # Questões e Respostas
 
