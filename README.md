@@ -40,6 +40,7 @@ Este projeto é uma aplicação de gerenciamento de estacionamento que permite r
    ```bash
    ./mvnw spring-boot:run
 4. Acesse a aplicação em http://localhost:8080/graphiql?path=/graphql
+5. Acesse a Branch do GrapQL para testes como o mesmo: https://github.com/GeorgeNicacio/gerenciamento-veiculos/tree/Rest
 
 # Questões e Respostas
 
