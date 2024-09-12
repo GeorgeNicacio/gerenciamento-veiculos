@@ -39,7 +39,7 @@ Este projeto é uma aplicação de gerenciamento de estacionamento que permite r
 3. Compile e execute o projeto:
    ```bash
    ./mvnw spring-boot:run
-4. Acesse a aplicação em http://localhost:8080.
+4. Acesse a aplicação e testar pelo swagger ou outras aplicações como postman: em http://localhost:8080/swagger-ui/index.html
 
 # Questões e Respostas
 
