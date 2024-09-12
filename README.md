@@ -14,6 +14,11 @@ Este projeto é uma aplicação de gerenciamento de estacionamento que permite r
 - **Java** (Spring Boot)
 - **GraphQL**
 - **REST APIs**
+- **Swagger 3**
+- **JUnit 5**
+- **Mockito**
+- **Lombok**
+- **GraphQL (https://github.com/GeorgeNicacio/gerenciamento-veiculos/tree/GraphQL)**
 - **Banco de Dados Relacional (H2)**
 - **JUnit** (Testes automatizados)
 - **Git** e **GitHub** (Controle de versão)
