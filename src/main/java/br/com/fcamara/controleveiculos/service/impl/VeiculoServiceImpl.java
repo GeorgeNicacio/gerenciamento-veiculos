@@ -28,7 +28,8 @@ public class VeiculoServiceImpl implements VeiculoService {
     @Autowired
     private EmpresaRepository empresaRepository;
     
-    private final ModelMapper modelMapper;
+    @Autowired
+    private ModelMapper modelMapper;
 
     @Override
     public VeiculoDTO salvarVeiculo(Veiculo veiculo) {

@@ -3,34 +3,28 @@ package br.com.fcamara.controleveiculos.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
+import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.MutationMapping;
+import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Controller;
 
+import br.com.fcamara.controleveiculos.config.jwt.model.User;
 import br.com.fcamara.controleveiculos.dtos.EmpresaDTO;
 import br.com.fcamara.controleveiculos.model.Empresa;
 import br.com.fcamara.controleveiculos.service.EmpresaService;
 
-@RestController
-@RequestMapping("/api/empresas")
+@Controller
 public class EmpresaController {
 
 	@Autowired
     private EmpresaService empresaService;
 	
 	// Endpoint para associar um veículo a uma empresa
-    @PostMapping(value = "/{empresaId}/veiculos/{veiculoId}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-    public ResponseEntity<EmpresaDTO> associarVeiculo(@PathVariable Long empresaId, @PathVariable Long veiculoId) {
+	@MutationMapping
+    public EmpresaDTO associarVeiculo(@Argument Long empresaId, @Argument Long veiculoId) {
     	// Recupera a autenticação atual
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String cnpjAutenticado = authentication.getName();  // O nome será o CNPJ
@@ -39,48 +33,66 @@ public class EmpresaController {
         Empresa empresa = empresaService.buscarEmpresaPorId(empresaId).get();
         if (empresa != null && empresa.getCnpj().equals(cnpjAutenticado)) {
         	EmpresaDTO empresaAtualizada = empresaService.associarVeiculo(empresaId, veiculoId);
-            return ResponseEntity.ok(empresaAtualizada);
+            return empresaAtualizada;
         } else {
-            return ResponseEntity.status(403).body(null);
+            return null;
         }
     }
 	
-    @PostMapping(value = "/cadastrar", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-    public ResponseEntity<EmpresaDTO> cadastrarEmpresa(@Validated @RequestBody Empresa empresa) {
-    	EmpresaDTO novaEmpresa = empresaService.salvarEmpresa(empresa, empresa.getUser());
-    	
-        return ResponseEntity.ok(novaEmpresa);
-    }
+	@MutationMapping
+	public EmpresaDTO cadastrarEmpresa(@Argument Empresa input) {
+	    // Criar uma nova instância de Empresa
+	    Empresa empresa = new Empresa();
+	    empresa.setNome(input.getNome());
+	    empresa.setCnpj(input.getCnpj());
+	    empresa.setEndereco(input.getEndereco());
+	    empresa.setTelefone(input.getTelefone());
+	    empresa.setVagasMotos(input.getVagasMotos());
+	    empresa.setVagasCarros(input.getVagasCarros());
 
-    @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+	    // Criar um novo usuário baseado no input
+	    User user = new User();
+	    user.setUsername(input.getUser().getUsername());
+	    user.setPassword(input.getUser().getPassword());  // O método setPassword já cuida da criptografia
+
+	    // Associar o usuário à empresa
+	    empresa.setUser(user);
+
+	    // Salvar a empresa e o usuário associados
+	    EmpresaDTO novaEmpresa = empresaService.salvarEmpresa(empresa, user);
+
+	    return novaEmpresa;
+	}
+
+    @QueryMapping
     public List<EmpresaDTO> listarEmpresas() {
         return empresaService.listarEmpresas();
     }
 
-    @GetMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-    public ResponseEntity<Empresa> buscarEmpresaPorId(@PathVariable Long id) {
+    @QueryMapping
+    public ResponseEntity<Empresa> buscarEmpresaPorId(@Argument Long id) {
         return empresaService.buscarEmpresaPorId(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-    public ResponseEntity<EmpresaDTO> atualizarEmpresa(@PathVariable Long id, @Validated @RequestBody Empresa empresa) {
+    @MutationMapping
+    public ResponseEntity<EmpresaDTO> atualizarEmpresa(@Argument Long id, @Argument Empresa input) {
         try {
-            EmpresaDTO empresaAtualizada = empresaService.atualizarEmpresa(id, empresa);
+            EmpresaDTO empresaAtualizada = empresaService.atualizarEmpresa(id, input);
             return ResponseEntity.ok(empresaAtualizada);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    @DeleteMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-    public ResponseEntity<Void> deletarEmpresa(@PathVariable Long id) {
-        try {
+    @MutationMapping
+    public boolean deletarEmpresa(@Argument Long id) {
+    	try {
             empresaService.deletarEmpresa(id);
-            return ResponseEntity.noContent().build();
+            return true; // Retorna 'true' para indicar que a empresa foi deletada
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return false; // Retorna 'false' se ocorrer algum erro
         }
     }
 }

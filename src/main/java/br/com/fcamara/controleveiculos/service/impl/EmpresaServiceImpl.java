@@ -36,7 +36,8 @@ public class EmpresaServiceImpl implements EmpresaService {
 	     @Autowired
 	     private PasswordEncoder passwordEncoder;
 	     
-	     private final ModelMapper modelMapper;
+	     @Autowired
+	     private ModelMapper modelMapper;
 
 	    @Override
 	    public EmpresaDTO salvarEmpresa(Empresa empresa, User user) {
@@ -106,6 +107,6 @@ public class EmpresaServiceImpl implements EmpresaService {
 	    
 	 // Método de conversão
 	    private EmpresaDTO convertToDto(Empresa empresa) {
-	        return modelMapper.map(empresa, EmpresaDTO.class); // Mapeamento de Veiculo para VeiculoDTO
+	        return modelMapper.map(empresa, EmpresaDTO.class); 
 	    }
 }

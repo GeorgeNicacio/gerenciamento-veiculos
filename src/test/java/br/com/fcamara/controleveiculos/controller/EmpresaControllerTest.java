@@ -1,105 +1,161 @@
 package br.com.fcamara.controleveiculos.controller;
 
-import static org.hamcrest.Matchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
+import br.com.fcamara.controleveiculos.config.jwt.model.User;
+import br.com.fcamara.controleveiculos.dtos.EmpresaDTO;
 import br.com.fcamara.controleveiculos.model.Empresa;
-import br.com.fcamara.controleveiculos.repository.EmpresaRepository;
+import br.com.fcamara.controleveiculos.service.EmpresaService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class EmpresaControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Mock
+    private EmpresaService empresaService;
 
-    @Autowired
-    private EmpresaRepository empresaRepository;
+    @InjectMocks
+    private EmpresaController empresaController;
+
+    @Mock
+    private Authentication authentication;
+
+    @Mock
+    private SecurityContext securityContext;
 
     @BeforeEach
     void setUp() {
-        empresaRepository.deleteAll();
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void testCadastrarEmpresa() throws Exception {
-        String empresaJson = "{\"nome\":\"Empresa Exemplo\",\"cnpj\":\"12345678000199\",\"endereco\":\"Rua Exemplo, 123\",\"telefone\":\"1234567890\",\"vagasParaMotos\":10,\"vagasParaCarros\":20}";
+    void testAssociarVeiculoComSucesso() {
+        Empresa empresaMock = new Empresa();
+        empresaMock.setId(1L);
+        empresaMock.setCnpj("12345678000199");
 
-        mockMvc.perform(post("/api/empresas")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(empresaJson))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome", is("Empresa Exemplo")))
-                .andExpect(jsonPath("$.cnpj", is("12345678000199")));
+        EmpresaDTO empresaDTO = new EmpresaDTO();
+        empresaDTO.setNome("Empresa Teste");
+
+        // Simulando a autenticação
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn("12345678000199");
+
+        // Mockando o comportamento do serviço
+        when(empresaService.buscarEmpresaPorId(1L)).thenReturn(Optional.of(empresaMock));
+        when(empresaService.associarVeiculo(1L, 1L)).thenReturn(empresaDTO);
+
+        EmpresaDTO resultado = empresaController.associarVeiculo(1L, 1L);
+
+        assertNotNull(resultado);
+        assertEquals("Empresa Teste", resultado.getNome());
     }
 
     @Test
-    void testBuscarEmpresaPorId() throws Exception {
+    void testAssociarVeiculoComErroCNPJ() {
+        Empresa empresaMock = new Empresa();
+        empresaMock.setId(1L);
+        empresaMock.setCnpj("12345678000199");
+
+        // Simulando a autenticação com um CNPJ diferente
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn("98765432000199");
+
+        // Mockando o comportamento do serviço
+        when(empresaService.buscarEmpresaPorId(1L)).thenReturn(Optional.of(empresaMock));
+
+        EmpresaDTO resultado = empresaController.associarVeiculo(1L, 1L);
+
+        assertNull(resultado);  // Esperamos que o método retorne null
+    }
+
+    @Test
+    void testCadastrarEmpresaComSucesso() {
+        Empresa input = new Empresa();
+        input.setNome("Empresa Teste");
+        input.setCnpj("12345678000199");
+        input.setEndereco("Rua X");
+        input.setTelefone("12345678");
+        input.setVagasMotos(10);
+        input.setVagasCarros(20);
+
+        User user = new User();
+        user.setUsername("admin");
+        user.setPassword("senhaSegura");
+        input.setUser(user);
+
+        EmpresaDTO empresaDTO = new EmpresaDTO();
+        empresaDTO.setNome("Empresa Teste");
+
+        when(empresaService.salvarEmpresa(any(Empresa.class), any(User.class))).thenReturn(empresaDTO);
+
+        EmpresaDTO resultado = empresaController.cadastrarEmpresa(input);
+
+        assertNotNull(resultado);
+        assertEquals("Empresa Teste", resultado.getNome());
+    }
+
+    @Test
+    void testListarEmpresas() {
+        EmpresaDTO empresa1 = new EmpresaDTO();
+        empresa1.setNome("Empresa 1");
+
+        EmpresaDTO empresa2 = new EmpresaDTO();
+        empresa2.setNome("Empresa 2");
+
+        List<EmpresaDTO> empresasMock = Arrays.asList(empresa1, empresa2);
+
+        when(empresaService.listarEmpresas()).thenReturn(empresasMock);
+
+        List<EmpresaDTO> resultado = empresaController.listarEmpresas();
+
+        assertEquals(2, resultado.size());
+        assertEquals("Empresa 1", resultado.get(0).getNome());
+        assertEquals("Empresa 2", resultado.get(1).getNome());
+    }
+
+    @Test
+    void testBuscarEmpresaPorIdComSucesso() {
         Empresa empresa = new Empresa();
-        empresa.setNome("Empresa Exemplo");
-        empresa.setCnpj("12345678000199");
-        empresa.setEndereco("Rua Exemplo, 123");
-        empresa.setTelefone("1234567890");
-        empresa.setVagasMotos(10);
-        empresa.setVagasCarros(20);
+        empresa.setId(1L);
+        empresa.setNome("Empresa 1");
 
-        empresa = empresaRepository.save(empresa);
+        when(empresaService.buscarEmpresaPorId(1L)).thenReturn(Optional.of(empresa));
 
-        mockMvc.perform(get("/api/empresas/" + empresa.getId())
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome", is("Empresa Exemplo")))
-                .andExpect(jsonPath("$.cnpj", is("12345678000199")));
+        ResponseEntity<Empresa> resultado = empresaController.buscarEmpresaPorId(1L);
+
+        assertEquals(200, resultado.getStatusCodeValue());
+        assertEquals("Empresa 1", resultado.getBody().getNome());
     }
 
     @Test
-    void testAtualizarEmpresa() throws Exception {
-        Empresa empresa = new Empresa();
-        empresa.setNome("Empresa Exemplo");
-        empresa.setCnpj("12345678000199");
-        empresa.setEndereco("Rua Exemplo, 123");
-        empresa.setTelefone("1234567890");
-        empresa.setVagasMotos(10);
-        empresa.setVagasCarros(20);
+    void testBuscarEmpresaPorIdNotFound() {
+        when(empresaService.buscarEmpresaPorId(1L)).thenReturn(Optional.empty());
 
-        empresa = empresaRepository.save(empresa);
+        ResponseEntity<Empresa> resultado = empresaController.buscarEmpresaPorId(1L);
 
-        String empresaAtualizadaJson = "{\"nome\":\"Empresa Atualizada\",\"cnpj\":\"12345678000199\",\"endereco\":\"Rua Nova, 456\",\"telefone\":\"0987654321\",\"vagasParaMotos\":15,\"vagasParaCarros\":25}";
-
-        mockMvc.perform(put("/api/empresas/" + empresa.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(empresaAtualizadaJson))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome", is("Empresa Atualizada")))
-                .andExpect(jsonPath("$.endereco", is("Rua Nova, 456")));
-    }
-
-    @Test
-    void testDeletarEmpresa() throws Exception {
-        Empresa empresa = new Empresa();
-        empresa.setNome("Empresa Exemplo");
-        empresa.setCnpj("12345678000199");
-        empresa.setEndereco("Rua Exemplo, 123");
-        empresa.setTelefone("1234567890");
-        empresa.setVagasMotos(10);
-        empresa.setVagasCarros(20);
-
-        empresa = empresaRepository.save(empresa);
-
-        mockMvc.perform(delete("/api/empresas/" + empresa.getId()))
-                .andExpect(status().isNoContent());
+        assertEquals(404, resultado.getStatusCodeValue());
     }
 }

@@ -5,77 +5,73 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
+import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.MutationMapping;
+import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Controller;
 
 import br.com.fcamara.controleveiculos.dtos.VeiculoDTO;
 import br.com.fcamara.controleveiculos.model.Veiculo;
 import br.com.fcamara.controleveiculos.service.VeiculoService;
-import jakarta.validation.Valid;
 
-@RestController
-@RequestMapping("/api/veiculos")
+@Controller
 public class VeiculoController {
 
     @Autowired
     private VeiculoService veiculoService;
     
  // Endpoint para cadastrar veículo, com ou sem empresas associadas
-    @PostMapping(value = "/cadastrar", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-    public ResponseEntity<VeiculoDTO> cadastrarVeiculo(@Valid @RequestBody VeiculoDTO veiculoDTO) {
-        Veiculo veiculo = new Veiculo();
-        veiculo.setMarca(veiculoDTO.getMarca());
-        veiculo.setModelo(veiculoDTO.getModelo());
-        veiculo.setCor(veiculoDTO.getCor());
-        veiculo.setPlaca(veiculoDTO.getPlaca());
-        veiculo.setTipo(veiculoDTO.getTipo());
+    @MutationMapping
+    public VeiculoDTO cadastrarVeiculo(@Argument VeiculoDTO input) {
+        if (input == null) {
+            throw new IllegalArgumentException("O objeto input não pode ser nulo");
+        }
 
-        Set<Long> empresaIds = veiculoDTO.getEmpresaIds() != null 
-                                ? veiculoDTO.getEmpresaIds().stream().collect(Collectors.toSet()) 
-                                : null;
+        Veiculo veiculo = new Veiculo();
+        veiculo.setMarca(input.getMarca());
+        veiculo.setModelo(input.getModelo());
+        veiculo.setCor(input.getCor());
+        veiculo.setPlaca(input.getPlaca());
+        veiculo.setTipo(input.getTipo());
+
+        Set<Long> empresaIds = input.getEmpresaIds() != null 
+                                    ? input.getEmpresaIds().stream().collect(Collectors.toSet()) 
+                                    : null;
 
         VeiculoDTO veiculoSalvo = veiculoService.cadastrarVeiculo(veiculo, empresaIds);
-        return ResponseEntity.ok(veiculoSalvo);
+        return veiculoSalvo;
     }
 
-    @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
+    @QueryMapping
     public List<VeiculoDTO> listarVeiculos() {
         return veiculoService.listarVeiculos();
     }
 
-    @GetMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-    public ResponseEntity<Veiculo> buscarVeiculoPorId(@PathVariable Long id) {
+    @QueryMapping
+    public ResponseEntity<Veiculo> buscarVeiculoPorId(@Argument Long id) {
         return veiculoService.buscarVeiculoPorId(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-    public ResponseEntity<VeiculoDTO> atualizarVeiculo(@PathVariable Long id, @Validated @RequestBody Veiculo veiculo) {
+    @MutationMapping
+    public VeiculoDTO atualizarVeiculo(@Argument Long id, @Argument Veiculo input) {
         try {
-        	VeiculoDTO veiculoAtualizado = veiculoService.atualizarVeiculo(id, veiculo);
-            return ResponseEntity.ok(veiculoAtualizado);
+        	VeiculoDTO veiculoAtualizado = veiculoService.atualizarVeiculo(id, input);
+            return veiculoAtualizado;
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return null;
         }
     }
 
-    @DeleteMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
-    public ResponseEntity<Void> deletarVeiculo(@PathVariable Long id) {
+    @MutationMapping
+    public boolean deletarVeiculo(@Argument Long id) {
         try {
             veiculoService.deletarVeiculo(id);
-            return ResponseEntity.noContent().build();
+            return true;
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return false;
         }
     }
 }

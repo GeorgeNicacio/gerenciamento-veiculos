@@ -32,7 +32,7 @@ public class SecurityConfiguration {
     private AuthEntryPointJwt unauthorizedHandler;
 
     private static final String[] WHITE_LIST_URL = { "/v3/api-docs/**", "/swagger-resources/**", "/configuration/ui","/configuration/security", "/swagger-ui/**", "/webjars/**", "/swagger-ui.html", 
-    		"/api/**", "/h2-console/**", "/signin", "/signup"};
+    		"/h2-console/**", "/signin", "/signup", "/graphiql/**", "/graphql/**"};
     
 
     @Bean

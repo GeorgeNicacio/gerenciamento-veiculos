@@ -1,93 +1,129 @@
 package br.com.fcamara.controleveiculos.controller;
 
-import static org.hamcrest.Matchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
 
-import br.com.fcamara.controleveiculos.model.MovimentacaoVeiculo;
-import br.com.fcamara.controleveiculos.model.Veiculo;
-import br.com.fcamara.controleveiculos.model.enums.TipoVeiculo;
-import br.com.fcamara.controleveiculos.repository.MovimentacaoVeiculoRepository;
-import br.com.fcamara.controleveiculos.repository.VeiculoRepository;
+import br.com.fcamara.controleveiculos.dtos.EmpresaDTO;
+import br.com.fcamara.controleveiculos.dtos.MovimentacaoVeiculoDTO;
+import br.com.fcamara.controleveiculos.dtos.VeiculoDTO;
+import br.com.fcamara.controleveiculos.model.enums.TipoMovimentacao;
+import br.com.fcamara.controleveiculos.service.MovimentacaoVeiculoService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class MovimentacaoVeiculoControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Mock
+    private MovimentacaoVeiculoService movimentacaoVeiculoService;
 
-    @Autowired
-    private MovimentacaoVeiculoRepository movimentacaoVeiculoRepository;
+    @InjectMocks
+    private MovimentacaoVeiculoController movimentacaoVeiculoController;
 
-    @Autowired
-    private VeiculoRepository veiculoRepository;
-
-    private Veiculo veiculo;
+    private EmpresaDTO empresaMock;
+    private VeiculoDTO veiculoMock;
 
     @BeforeEach
     void setUp() {
-        movimentacaoVeiculoRepository.deleteAll();
-        veiculoRepository.deleteAll();
+        MockitoAnnotations.openMocks(this);
 
-        veiculo = new Veiculo();
-        veiculo.setMarca("Toyota");
-        veiculo.setModelo("Corolla");
-        veiculo.setCor("Preto");
-        veiculo.setPlaca("ABC-1234");
-        veiculo.setTipo(TipoVeiculo.CARRO);
+        // Criação de objetos de teste (EmpresaDTO e VeiculoDTO)
+        empresaMock = new EmpresaDTO();
+        empresaMock.setId(1L);
+        empresaMock.setNome("Empresa Teste");
 
-        veiculo = veiculoRepository.save(veiculo);
+        veiculoMock = new VeiculoDTO();
+        veiculoMock.setMarca("Toyota");
+        veiculoMock.setModelo("Corolla");
     }
 
     @Test
-    void testRegistrarEntradaVeiculo() throws Exception {
-        mockMvc.perform(post("/api/movimentacoes/entrada")
-                .param("veiculoId", String.valueOf(veiculo.getId())))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.veiculo.id", is(veiculo.getId().intValue())))
-                .andExpect(jsonPath("$.entrada").exists())
-                .andExpect(jsonPath("$.saida").doesNotExist());
+    void testRegistrarEntradaComSucesso() {
+        // Criação do DTO de movimentação com objetos completos de EmpresaDTO e VeiculoDTO
+        MovimentacaoVeiculoDTO movimentacaoDTO = new MovimentacaoVeiculoDTO();
+        movimentacaoDTO.setEmpresa(empresaMock);
+        movimentacaoDTO.setVeiculo(veiculoMock);
+        movimentacaoDTO.setTipoMovimentacao(TipoMovimentacao.ENTRADA);
+
+        // Simulação do serviço
+        when(movimentacaoVeiculoService.registrarMovimentacao(1L, 2L, TipoMovimentacao.ENTRADA)).thenReturn(movimentacaoDTO);
+
+        // Execução do método do controlador
+        MovimentacaoVeiculoDTO resultado = movimentacaoVeiculoController.registrarEntrada(1L, 2L);
+
+        // Verificações
+        assertNotNull(resultado);
+        assertEquals("Empresa Teste", resultado.getEmpresa().getNome());
+        assertEquals("Toyota", resultado.getVeiculo().getMarca());
+        assertEquals(TipoMovimentacao.ENTRADA, resultado.getTipoMovimentacao());
     }
 
     @Test
-    void testRegistrarSaidaVeiculo() throws Exception {
-        MovimentacaoVeiculo movimentacaoVeiculo = new MovimentacaoVeiculo();
-        movimentacaoVeiculo.setVeiculo(veiculo);
-        movimentacaoVeiculo.setDataHora(LocalDateTime.now());
-        movimentacaoVeiculo = movimentacaoVeiculoRepository.save(movimentacaoVeiculo);
+    void testRegistrarSaidaComSucesso() {
+        // Criação do DTO de movimentação com objetos completos de EmpresaDTO e VeiculoDTO
+        MovimentacaoVeiculoDTO movimentacaoDTO = new MovimentacaoVeiculoDTO();
+        movimentacaoDTO.setEmpresa(empresaMock);
+        movimentacaoDTO.setVeiculo(veiculoMock);
+        movimentacaoDTO.setTipoMovimentacao(TipoMovimentacao.SAIDA);
 
-        mockMvc.perform(post("/api/movimentacoes/saida")
-                .param("movimentacaoId", String.valueOf(movimentacaoVeiculo.getId())))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.veiculo.id", is(veiculo.getId().intValue())))
-                .andExpect(jsonPath("$.entrada").exists())
-                .andExpect(jsonPath("$.saida").exists());
+        // Simulação do serviço
+        when(movimentacaoVeiculoService.registrarMovimentacao(1L, 2L, TipoMovimentacao.SAIDA)).thenReturn(movimentacaoDTO);
+
+        // Execução do método do controlador
+        MovimentacaoVeiculoDTO resultado = movimentacaoVeiculoController.registrarSaida(1L, 2L);
+
+        // Verificações
+        assertNotNull(resultado);
+        assertEquals("Empresa Teste", resultado.getEmpresa().getNome());
+        assertEquals("Toyota", resultado.getVeiculo().getMarca());
+        assertEquals(TipoMovimentacao.SAIDA, resultado.getTipoMovimentacao());
     }
 
     @Test
-    void testBuscarMovimentacaoPorId() throws Exception {
-        MovimentacaoVeiculo movimentacaoVeiculo = new MovimentacaoVeiculo();
-        movimentacaoVeiculo.setVeiculo(veiculo);
-        movimentacaoVeiculo.setDataHora(LocalDateTime.now());
-        movimentacaoVeiculo = movimentacaoVeiculoRepository.save(movimentacaoVeiculo);
+    void testListarMovimentacoesComSucesso() {
+        // Criação de DTOs fictícios de movimentação com objetos completos de EmpresaDTO e VeiculoDTO
+        MovimentacaoVeiculoDTO movimentacao1 = new MovimentacaoVeiculoDTO();
+        movimentacao1.setEmpresa(empresaMock);
+        movimentacao1.setVeiculo(veiculoMock);
+        movimentacao1.setTipoMovimentacao(TipoMovimentacao.ENTRADA);
 
-        mockMvc.perform(get("/api/movimentacoes/" + movimentacaoVeiculo.getId())
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.veiculo.id", is(veiculo.getId().intValue())))
-                .andExpect(jsonPath("$.entrada").exists());
+        EmpresaDTO outraEmpresa = new EmpresaDTO();
+        outraEmpresa.setId(3L);
+        outraEmpresa.setNome("Outra Empresa");
+
+        VeiculoDTO outroVeiculo = new VeiculoDTO();
+        outroVeiculo.setMarca("Ford");
+        outroVeiculo.setModelo("Focus");
+
+        MovimentacaoVeiculoDTO movimentacao2 = new MovimentacaoVeiculoDTO();
+        movimentacao2.setEmpresa(outraEmpresa);
+        movimentacao2.setVeiculo(outroVeiculo);
+        movimentacao2.setTipoMovimentacao(TipoMovimentacao.SAIDA);
+
+        // Simulação do serviço
+        when(movimentacaoVeiculoService.listarMovimentacoes()).thenReturn(Arrays.asList(movimentacao1, movimentacao2));
+
+        // Execução do método do controlador
+        List<MovimentacaoVeiculoDTO> resultado = movimentacaoVeiculoController.listarMovimentacoes();
+
+        // Verificações
+        assertEquals(2, resultado.size());
+        assertEquals("Empresa Teste", resultado.get(0).getEmpresa().getNome());
+        assertEquals("Toyota", resultado.get(0).getVeiculo().getMarca());
+        assertEquals(TipoMovimentacao.ENTRADA, resultado.get(0).getTipoMovimentacao());
+
+        assertEquals("Outra Empresa", resultado.get(1).getEmpresa().getNome());
+        assertEquals("Ford", resultado.get(1).getVeiculo().getMarca());
+        assertEquals(TipoMovimentacao.SAIDA, resultado.get(1).getTipoMovimentacao());
     }
 }

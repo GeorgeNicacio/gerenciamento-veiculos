@@ -1,62 +1,54 @@
 package br.com.fcamara.controleveiculos.controller;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.stereotype.Controller;
 
 import br.com.fcamara.controleveiculos.dtos.MovimentacaoVeiculoDTO;
+import br.com.fcamara.controleveiculos.dtos.RelatorioHoraDTO;
+import br.com.fcamara.controleveiculos.dtos.RelatorioInput;
+import br.com.fcamara.controleveiculos.dtos.RelatorioSumarioDTO;
+import br.com.fcamara.controleveiculos.model.enums.TipoMovimentacao;
 import br.com.fcamara.controleveiculos.service.RelatorioService;
 
-@RestController
-@RequestMapping("/api/relatorios")
+@Controller
 public class RelatorioController {
 
     @Autowired
     private RelatorioService relatorioService;
-    
- // Endpoint para relatório de movimentações por data
-    @GetMapping("/movimentacoes")
-    public ResponseEntity<List<MovimentacaoVeiculoDTO>> gerarRelatorioMovimentacao(
-            @RequestParam Long empresaId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim) {
-        List<MovimentacaoVeiculoDTO> movimentacoes = relatorioService.gerarRelatorioMovimentacao(empresaId, dataInicio, dataFim);
-        return ResponseEntity.ok(movimentacoes);
+
+    // Query para gerar o relatório de movimentações por data
+    @QueryMapping
+    public List<MovimentacaoVeiculoDTO> gerarRelatorioMovimentacao(@Argument RelatorioInput input) {
+        // Chama o serviço para obter o relatório de movimentações por período
+        return relatorioService.gerarRelatorioMovimentacao(input.getEmpresaId(), input.getDataInicio(), input.getDataFim());
     }
 
-    // Endpoint para relatório por hora de movimentações
-    @GetMapping("/movimentacoes-por-hora")
-    public ResponseEntity<List<Object[]>> gerarRelatorioMovimentacaoPorHora(
-            @RequestParam Long empresaId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim) {
-        List<Object[]> relatorioPorHora = relatorioService.gerarRelatorioMovimentacaoPorHora(empresaId, dataInicio, dataFim);
-        return ResponseEntity.ok(relatorioPorHora);
+    // Query para gerar o relatório de movimentações por hora
+    @QueryMapping
+    public List<RelatorioHoraDTO> gerarRelatorioMovimentacaoPorHora(@Argument RelatorioInput input) {
+        // Chama o serviço e converte os resultados no formato adequado
+        List<Object[]> relatorioPorHora = relatorioService.gerarRelatorioMovimentacaoPorHora(input.getEmpresaId(), input.getDataInicio(), input.getDataFim());
+
+        // Converte o resultado para o formato DTO (hora, entradas, saídas)
+        return relatorioPorHora.stream()
+                .map(obj -> new RelatorioHoraDTO((Integer) obj[0], (TipoMovimentacao) obj[1], (Long) obj[2]))
+                .collect(Collectors.toList());
     }
 
-    @GetMapping("/sumario")
-    public ResponseEntity<Map<String, Long>> obterSumarioEntradaSaida(
-    		@RequestParam Long empresaId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim) {
+    // Query para obter sumário de entradas e saídas por período
+    @QueryMapping
+    public RelatorioSumarioDTO obterSumarioEntradaSaida( @Argument RelatorioInput input) {
+        // Obtém o número de entradas e saídas no período
+        long entradas = relatorioService.contarEntradasPorPeriodo(input.getEmpresaId(), input.getDataInicio(), input.getDataFim());
+        long saidas = relatorioService.contarSaidasPorPeriodo(input.getEmpresaId(), input.getDataInicio(), input.getDataFim());
 
-        long entradas = relatorioService.contarEntradasPorPeriodo(empresaId, dataInicio, dataFim);
-        long saidas = relatorioService.contarSaidasPorPeriodo(empresaId, dataInicio, dataFim);
-
-        Map<String, Long> resultado = new HashMap<>();
-        resultado.put("entradas", entradas);
-        resultado.put("saidas", saidas);
-
-        return ResponseEntity.ok(resultado);
+        // Retorna um DTO contendo o sumário de entradas e saídas
+        return new RelatorioSumarioDTO(entradas, saidas);
     }
 
 }

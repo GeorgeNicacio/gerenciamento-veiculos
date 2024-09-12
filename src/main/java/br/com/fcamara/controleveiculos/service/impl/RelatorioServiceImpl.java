@@ -22,7 +22,8 @@ public class RelatorioServiceImpl implements RelatorioService {
     @Autowired
     private MovimentacaoVeiculoRepository movimentacaoVeiculoRepository;
     
-    private final ModelMapper modelMapper;
+    @Autowired
+    private ModelMapper modelMapper;
     
     // Quantidade de entradas por período
     public long contarEntradasPorPeriodo(Long empresaId, LocalDateTime dataInicio, LocalDateTime dataFim) {

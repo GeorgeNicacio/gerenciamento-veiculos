@@ -1,0 +1,148 @@
+enum TipoMovimentacao {
+  ENTRADA
+  SAIDA
+}
+
+type MovimentacaoVeiculoDTO {
+  id: ID!
+  veiculo: VeiculoDTO!
+  empresa: EmpresaDTO!
+  tipoMovimentacao: TipoMovimentacao!
+  dataHora: String!
+}
+
+type Empresa {
+  id: ID!
+  nome: String!
+  cnpj: String!
+  endereco: String!
+  telefone: String!
+  vagasMotos: Int!
+  vagasCarros: Int!
+  veiculos: [Veiculo!]!
+  user: User!
+}
+
+type User {
+  id: ID!
+  username: String!
+  roles: [String!]!
+}
+
+type EmpresaDTO {
+  id: ID!
+  nome: String!
+  cnpj: String!
+  endereco: String!
+  telefone: String!
+  vagasMotos: Int!
+  vagasCarros: Int!
+  veiculos: [Veiculo!]!
+}
+
+type Veiculo {
+  id: ID!
+  marca: String!
+  modelo: String!
+  cor: String!
+  placa: String!
+  tipo: TipoVeiculo!
+}
+
+enum TipoVeiculo {
+  CARRO
+  MOTO
+}
+
+type VeiculoDTO {
+  marca: String!
+  modelo: String!
+  cor: String!
+  placa: String!
+  tipo: TipoVeiculo!
+  empresaIds: [ID!]
+}
+
+input VeiculoInput {
+  marca: String!
+  modelo: String!
+  cor: String!
+  placa: String!
+  tipo: TipoVeiculo!
+  empresaIds: [ID!]
+}
+
+type RelatorioSumarioDTO {
+  entradas: Int!
+  saidas: Int!
+}
+
+type RelatorioHoraDTO {
+  hora: Int!
+  tipo: TipoMovimentacao!
+  qtd: Int!
+}
+
+input UserInput {
+  username: String!
+  password: String!
+}
+
+input EmpresaInput {
+  nome: String!
+  cnpj: String!
+  endereco: String!
+  telefone: String!
+  vagasMotos: Int!
+  vagasCarros: Int!
+  user: UserInput!
+}
+
+input RelatorioInput {
+  empresaId: ID!
+  dataInicio: String!  # Data no formato ISO 8601, por exemplo, "2024-01-01T00:00:00"
+  dataFim: String!     # Data no formato ISO 8601, por exemplo, "2024-01-31T23:59:59"
+}
+
+
+type Query {
+  # Listar todas as movimentações de veículos
+  listarMovimentacoes: [MovimentacaoVeiculoDTO!]!
+  
+   # Consulta para listar todas as empresas
+  listarEmpresas: [EmpresaDTO]
+
+  # Consulta para buscar uma empresa por ID
+  buscarEmpresaPorId(id: ID!): Empresa
+  
+   # Listar todos os veículos
+  listarVeiculos: [VeiculoDTO!]!
+
+  # Buscar um veículo por ID
+  buscarVeiculoPorId(id: ID!): Veiculo
+  
+  # Gerar o relatório de movimentações por período
+  gerarRelatorioMovimentacao(input: RelatorioInput!): [MovimentacaoVeiculoDTO!]!
+
+  # Gerar o relatório de movimentações por hora
+  gerarRelatorioMovimentacaoPorHora(input: RelatorioInput!): [RelatorioHoraDTO!]!
+
+  # Obter sumário de entradas e saídas por período
+  obterSumarioEntradaSaida(input: RelatorioInput!): RelatorioSumarioDTO!
+  
+}
+
+
+type Mutation {
+  cadastrarEmpresa(input: EmpresaInput!): EmpresaDTO
+  atualizarEmpresa(id: ID!, input: EmpresaInput!): EmpresaDTO
+  deletarEmpresa(id: ID!): Boolean
+  associarVeiculo(empresaId: ID!, veiculoId: ID!): EmpresaDTO
+  
+  cadastrarVeiculo(input: VeiculoInput!): VeiculoDTO!
+  atualizarVeiculo(id: ID!, input: VeiculoInput!): VeiculoDTO!
+  deletarVeiculo(id: ID!): Boolean!
+  
+  registrarEntrada(empresaId: ID!, veiculoId: ID!): MovimentacaoVeiculoDTO!
+  registrarSaida(empresaId: ID!, veiculoId: ID!): MovimentacaoVeiculoDTO!
+}

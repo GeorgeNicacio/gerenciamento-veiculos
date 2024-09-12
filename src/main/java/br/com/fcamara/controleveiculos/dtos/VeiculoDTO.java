@@ -9,6 +9,7 @@ import br.com.fcamara.controleveiculos.model.enums.TipoVeiculo;
 
 @Data
 public class VeiculoDTO {
+	private Long id;
     @NotBlank(message = "Marca é obrigatória")
     private String marca;
 
