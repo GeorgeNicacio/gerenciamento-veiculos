@@ -43,9 +43,15 @@ Este projeto é uma aplicação de gerenciamento de estacionamento que permite r
    cd gerenciamento-veiculos
 3. Compile e execute o projeto:
    ```bash
-   ./mvnw spring-boot:run
-4. Acesse a aplicação e testar pelo swagger ou outras aplicações como postman: em http://localhost:8080/swagger-ui/index.html
-5. Acesse a Branch do GrapQL para testes como o mesmo: https://github.com/GeorgeNicacio/gerenciamento-veiculos/tree/GraphQL
+   mvn clean package
+   
+4.Compile e execute o projeto:
+  ```bash
+     mvnw spring-boot:run
+  ```
+5. Acesse a aplicação e testar pelo swagger ou outras aplicações como postman: em http://localhost:8080/swagger-ui/index.html
+6.
+7.  Acesse a Branch do GrapQL para testes como o mesmo: https://github.com/GeorgeNicacio/gerenciamento-veiculos/tree/GraphQL
 
 # Questões e Respostas
 
