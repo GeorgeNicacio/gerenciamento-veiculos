@@ -27,7 +27,7 @@ Este projeto é uma aplicação de gerenciamento de estacionamento que permite r
 
 ### Pré-requisitos
 
-- **Java 17** ou superior
+- **Java 21** ou superior
 - **Maven**
 - **H2** ou outro banco de dados relacional
 - Existem 2 Branchs uma se chama Rest com API Rest e outra GraphQL com o suporte ao mesmo.
