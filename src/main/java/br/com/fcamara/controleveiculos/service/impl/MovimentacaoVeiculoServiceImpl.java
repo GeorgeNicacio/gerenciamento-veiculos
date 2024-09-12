@@ -32,7 +32,8 @@ public class MovimentacaoVeiculoServiceImpl implements MovimentacaoVeiculoServic
     @Autowired
     private EmpresaRepository empresaRepository;
     
-    private final ModelMapper modelMapper;
+    @Autowired
+    private ModelMapper modelMapper;
 
     @Override
     public MovimentacaoVeiculoDTO registrarMovimentacao(Long empresaId, Long veiculoId, TipoMovimentacao tipoMovimentacao) {

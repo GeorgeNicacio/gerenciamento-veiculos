@@ -36,7 +36,8 @@ public class EmpresaServiceImpl implements EmpresaService {
 	     @Autowired
 	     private PasswordEncoder passwordEncoder;
 	     
-	     private final ModelMapper modelMapper;
+	     @Autowired
+	     private ModelMapper modelMapper;
 
 	    @Override
 	    public EmpresaDTO salvarEmpresa(Empresa empresa, User user) {
