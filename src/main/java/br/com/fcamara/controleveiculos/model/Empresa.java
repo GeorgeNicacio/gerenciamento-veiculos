@@ -6,7 +6,6 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
-import br.com.fcamara.controleveiculos.config.jwt.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -58,12 +57,6 @@ public class Empresa {
         inverseJoinColumns = @JoinColumn(name = "veiculo_id")
     )
     private Set<Veiculo> veiculos = new HashSet<>();
-    
-    // Relacionamento com a entidade User
-    @OneToOne
-    @JoinColumn(name = "user_id")
-    @JsonManagedReference(value = "empresa-user")
-    private User user;
     
     // Métodos auxiliares para gerenciar o relacionamento
     public void addVeiculo(Veiculo veiculo) {

@@ -27,12 +27,12 @@ import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import br.com.fcamara.controleveiculos.config.jwt.model.User;
-import br.com.fcamara.controleveiculos.config.jwt.repository.UserRepository;
 import br.com.fcamara.controleveiculos.dtos.EmpresaDTO;
 import br.com.fcamara.controleveiculos.model.Empresa;
+import br.com.fcamara.controleveiculos.model.User;
 import br.com.fcamara.controleveiculos.model.Veiculo;
 import br.com.fcamara.controleveiculos.repository.EmpresaRepository;
+import br.com.fcamara.controleveiculos.repository.UserRepository;
 import br.com.fcamara.controleveiculos.repository.VeiculoRepository;
 import br.com.fcamara.controleveiculos.service.impl.EmpresaServiceImpl;
 
@@ -77,40 +77,30 @@ class EmpresaServiceImplTest {
         userMock = new User();
         userMock.setUsername("admin");
         userMock.setPassword("senha123");
-        
-        empresaMock.setUser(userMock);
-        userMock.setEmpresa(empresaMock);
     }
 
     @Test
     void testSalvarEmpresaComSucesso() {
         // Simulação do comportamento dos mocks
-        when(passwordEncoder.encode(anyString())).thenReturn("senhaCriptografada");
-        when(userRepository.save(any(User.class))).thenReturn(userMock);
         when(empresaRepository.save(any(Empresa.class))).thenReturn(empresaMock);
         when(modelMapper.map(any(Empresa.class), eq(EmpresaDTO.class))).thenReturn(new EmpresaDTO());
 
         // Execução do método
-        EmpresaDTO resultado = empresaService.salvarEmpresa(empresaMock, userMock);
+        EmpresaDTO resultado = empresaService.salvarEmpresa(empresaMock);
 
         // Verificações
         assertNotNull(resultado);
-        verify(passwordEncoder).encode(anyString());
-        verify(userRepository).save(any(User.class));
         verify(empresaRepository).save(any(Empresa.class));
     }
 
     @Test
     void testSalvarEmpresaCNPJDuplicado() {
-        // Simulação de criptografia de senha, para evitar erro de senha nula
-        when(passwordEncoder.encode(anyString())).thenReturn("senhaCriptografada");
-
         // Simulação de exceção de violação de integridade ao salvar a empresa
         when(empresaRepository.save(any(Empresa.class))).thenThrow(new DataIntegrityViolationException("CNPJ já cadastrado"));
 
         // Execução do método e captura da exceção
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            empresaService.salvarEmpresa(empresaMock, userMock);
+            empresaService.salvarEmpresa(empresaMock);
         });
 
         // Verificação

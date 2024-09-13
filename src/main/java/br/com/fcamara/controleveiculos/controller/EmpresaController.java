@@ -47,7 +47,7 @@ public class EmpresaController {
 	
     @PostMapping(value = "/cadastrar", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE})
     public ResponseEntity<EmpresaDTO> cadastrarEmpresa(@Validated @RequestBody Empresa empresa) {
-    	EmpresaDTO novaEmpresa = empresaService.salvarEmpresa(empresa, empresa.getUser());
+    	EmpresaDTO novaEmpresa = empresaService.salvarEmpresa(empresa);
     	
         return ResponseEntity.ok(novaEmpresa);
     }

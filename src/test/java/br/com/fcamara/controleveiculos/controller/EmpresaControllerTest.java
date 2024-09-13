@@ -22,9 +22,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import br.com.fcamara.controleveiculos.config.jwt.model.User;
 import br.com.fcamara.controleveiculos.dtos.EmpresaDTO;
 import br.com.fcamara.controleveiculos.model.Empresa;
+import br.com.fcamara.controleveiculos.model.User;
 import br.com.fcamara.controleveiculos.service.EmpresaService;
 
 @SpringBootTest
@@ -109,16 +109,11 @@ class EmpresaControllerTest {
         input.setVagasMotos(10);
         input.setVagasCarros(20);
 
-        User user = new User();
-        user.setUsername("admin");
-        user.setPassword("senhaSegura");
-        input.setUser(user);
-
         EmpresaDTO empresaDTO = new EmpresaDTO();
         empresaDTO.setNome("Empresa Teste");
 
         // Mockando o comportamento do serviço
-        when(empresaService.salvarEmpresa(any(Empresa.class), any(User.class))).thenReturn(empresaDTO);
+        when(empresaService.salvarEmpresa(any(Empresa.class))).thenReturn(empresaDTO);
 
         // Agora a chamada ao controller deve retornar ResponseEntity
         ResponseEntity<EmpresaDTO> response = empresaController.cadastrarEmpresa(input);

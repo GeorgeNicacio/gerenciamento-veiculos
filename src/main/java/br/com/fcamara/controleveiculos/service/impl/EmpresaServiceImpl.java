@@ -10,12 +10,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import br.com.fcamara.controleveiculos.config.jwt.model.User;
-import br.com.fcamara.controleveiculos.config.jwt.repository.UserRepository;
 import br.com.fcamara.controleveiculos.dtos.EmpresaDTO;
 import br.com.fcamara.controleveiculos.model.Empresa;
+import br.com.fcamara.controleveiculos.model.User;
 import br.com.fcamara.controleveiculos.model.Veiculo;
 import br.com.fcamara.controleveiculos.repository.EmpresaRepository;
+import br.com.fcamara.controleveiculos.repository.UserRepository;
 import br.com.fcamara.controleveiculos.repository.VeiculoRepository;
 import br.com.fcamara.controleveiculos.service.EmpresaService;
 import lombok.RequiredArgsConstructor;
@@ -40,22 +40,13 @@ public class EmpresaServiceImpl implements EmpresaService {
 	     private ModelMapper modelMapper;
 
 	    @Override
-	    public EmpresaDTO salvarEmpresa(Empresa empresa, User user) {
+	    public EmpresaDTO salvarEmpresa(Empresa empresa) {
 	    	 try {
-		    	user.setEmpresa(empresa);
-		    	 // Criptografando a senha do usuário
-		        user.setPassword(passwordEncoder.encode(user.getPassword()));
-		        userRepository.save(user);
-	
-		        // Associando o usuário à empresa
-		        empresa.setUser(user);
-	        
 	            return convertToDto(empresaRepository.save(empresa));
 	        } catch (DataIntegrityViolationException e) {
 	            // Captura a exceção de violação de unicidade no banco de dados
 	            throw new RuntimeException("CNPJ já cadastrado no sistema.");
 	        }
-
 	    }
 
 	    @Override

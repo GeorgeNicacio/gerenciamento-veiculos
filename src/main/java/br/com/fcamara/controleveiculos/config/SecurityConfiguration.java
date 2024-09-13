@@ -1,79 +1,69 @@
 package br.com.fcamara.controleveiculos.config;
 
-import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
-import br.com.fcamara.controleveiculos.config.jwt.AuthEntryPointJwt;
-import br.com.fcamara.controleveiculos.config.jwt.AuthTokenFilter;
+import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 public class SecurityConfiguration {
+  @Value("${jwt.public.key}")
+  private RSAPublicKey key;
+  @Value("${jwt.private.key}")
+  private RSAPrivateKey priv;
+  
+  private static final String[] WHITE_LIST_URL = { "/swagger/**","/v3/**", "/swagger-resources/**", "/configuration/**", 
+		  										   "/swagger-ui/**", "/webjars/**", "/swagger-ui.html", 
+  		 										   "/h2-console/**"};
 
-    @Autowired
-    UserDetailsService userDetailsService;
-    @Autowired
-    private AuthEntryPointJwt unauthorizedHandler;
-
-    private static final String[] WHITE_LIST_URL = { "/v3/api-docs/**", "/swagger-resources/**", "/configuration/ui","/configuration/security", "/swagger-ui/**", "/webjars/**", "/swagger-ui.html", 
-    		"/api/**", "/h2-console/**", "/signin", "/signup"};
-    
-
-    @Bean
-    public AuthTokenFilter authenticationJwtTokenFilter() {
-        return new AuthTokenFilter();
-    }
-
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-
-        authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-
-        return authProvider;
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();
-    }
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, HandlerMappingIntrospector introspector) throws Exception {
-        http.csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.disable())  // Pode ser configurado explicitamente se necessário
-            .authorizeHttpRequests(req -> req
-            	.requestMatchers("/auth/**").permitAll()
+  @Bean
+  SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http.csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(
+            auth -> auth
+                .requestMatchers("/authenticate").permitAll()
                 .requestMatchers(WHITE_LIST_URL).permitAll()  // Permite acesso aos caminhos da lista branca
-                .anyRequest().authenticated())  // Exige autenticação para outros caminhos
-            .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))  // Custom exception handler
-            .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))  // Sem sessões
-            .authenticationProvider(authenticationProvider())  // Provedor de autenticação
-            .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);  // Filtro JWT
+                .anyRequest().authenticated())
+        .httpBasic(Customizer.withDefaults())
+        .oauth2ResourceServer(
+            conf -> conf.jwt(
+                jwt -> jwt.decoder(jwtDecoder())));
+    return http.build();
+  }
 
-        return http.build();
-    }
+  @Bean
+  PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
 
-}
+  @Bean
+  JwtDecoder jwtDecoder() {
+    return NimbusJwtDecoder.withPublicKey(this.key).build();
+  }
+
+  @Bean
+  JwtEncoder jwtEncoder() {
+    JWK jwk = new RSAKey.Builder(this.key).privateKey(this.priv).build();
+    JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
+    return new NimbusJwtEncoder(jwks);
+  }}
