@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 
 import br.com.fcamara.controleveiculos.dtos.VeiculoDTO;
@@ -49,10 +48,8 @@ public class VeiculoController {
     }
 
     @QueryMapping
-    public ResponseEntity<Veiculo> buscarVeiculoPorId(@Argument Long id) {
-        return veiculoService.buscarVeiculoPorId(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public Veiculo buscarVeiculoPorId(@Argument Long id) {
+        return veiculoService.buscarVeiculoPorId(id).get();
     }
 
     @MutationMapping

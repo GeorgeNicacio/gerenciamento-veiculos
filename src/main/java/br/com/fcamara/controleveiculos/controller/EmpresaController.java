@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -70,19 +69,17 @@ public class EmpresaController {
     }
 
     @QueryMapping
-    public ResponseEntity<Empresa> buscarEmpresaPorId(@Argument Long id) {
-        return empresaService.buscarEmpresaPorId(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public Empresa buscarEmpresaPorId(@Argument Long id) {
+        return empresaService.buscarEmpresaPorId(id).get();
     }
 
     @MutationMapping
-    public ResponseEntity<EmpresaDTO> atualizarEmpresa(@Argument Long id, @Argument Empresa input) {
+    public EmpresaDTO atualizarEmpresa(@Argument Long id, @Argument Empresa input) {
         try {
             EmpresaDTO empresaAtualizada = empresaService.atualizarEmpresa(id, input);
-            return ResponseEntity.ok(empresaAtualizada);
+            return empresaAtualizada;
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return null;
         }
     }
 

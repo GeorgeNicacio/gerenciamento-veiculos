@@ -108,23 +108,21 @@ class VeiculoControllerTest {
         when(veiculoService.buscarVeiculoPorId(1L)).thenReturn(Optional.of(veiculo));
 
         // Execução do método do controlador
-        ResponseEntity<Veiculo> resultado = veiculoController.buscarVeiculoPorId(1L);
+        Veiculo resultado = veiculoController.buscarVeiculoPorId(1L);
 
         // Verificações
-        assertEquals(200, resultado.getStatusCodeValue());
-        assertEquals("Honda", resultado.getBody().getMarca());
+        assertEquals("Honda", resultado.getMarca());
     }
 
     @Test
-    void testBuscarVeiculoPorIdNaoEncontrado() {
-        // Simulação do serviço retornando Optional vazio
+    void testBuscarVeiculoPorIdNotFound() {
+        // Simulação do serviço retornando Optional.empty() quando o veículo não for encontrado
         when(veiculoService.buscarVeiculoPorId(1L)).thenReturn(Optional.empty());
 
-        // Execução do método do controlador
-        ResponseEntity<Veiculo> resultado = veiculoController.buscarVeiculoPorId(1L);
-
-        // Verificações
-        assertEquals(404, resultado.getStatusCodeValue());
+        // Verificação de que uma exceção é lançada quando o veículo não é encontrado
+        assertThrows(RuntimeException.class, () -> {
+            veiculoController.buscarVeiculoPorId(1L);
+        });
     }
 
     @Test

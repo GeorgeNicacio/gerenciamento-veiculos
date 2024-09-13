@@ -3,6 +3,7 @@ package br.com.fcamara.controleveiculos.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -17,7 +18,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -144,18 +144,19 @@ class EmpresaControllerTest {
 
         when(empresaService.buscarEmpresaPorId(1L)).thenReturn(Optional.of(empresa));
 
-        ResponseEntity<Empresa> resultado = empresaController.buscarEmpresaPorId(1L);
+        Empresa resultado = empresaController.buscarEmpresaPorId(1L);
 
-        assertEquals(200, resultado.getStatusCodeValue());
-        assertEquals("Empresa 1", resultado.getBody().getNome());
+        assertEquals("Empresa 1", resultado.getNome());
     }
 
     @Test
     void testBuscarEmpresaPorIdNotFound() {
+        // Simulação do serviço retornando Optional.empty() quando a empresa não for encontrada
         when(empresaService.buscarEmpresaPorId(1L)).thenReturn(Optional.empty());
 
-        ResponseEntity<Empresa> resultado = empresaController.buscarEmpresaPorId(1L);
-
-        assertEquals(404, resultado.getStatusCodeValue());
+        // Verificação de que uma exceção é lançada quando a empresa não é encontrada
+        assertThrows(RuntimeException.class, () -> {
+            empresaController.buscarEmpresaPorId(1L);
+        });
     }
 }
